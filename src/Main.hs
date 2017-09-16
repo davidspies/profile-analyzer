@@ -13,6 +13,7 @@ import qualified Data.Aeson as JSON
 import Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Lazy.Char8 as ByteString
 import Data.Char (isNumber)
+import qualified Data.IntSet as IntSet
 import Data.List (sortOn)
 import qualified Data.Map as Map
 import Data.Text (Text)
@@ -33,7 +34,7 @@ data CCStats a = CCStats {cc :: CostCentre, stats :: a}
   deriving (Generic, ToJSON, Functor)
 instance ToJSON a => ToJSONObject (CCStats a)
 
-data Structure = List | Tree
+data Structure = List | Tree | Roots
   deriving (Enum, Eq, Show, Read)
 
 data Measurement = Ticks | Alloc | Entries
@@ -80,6 +81,7 @@ main = do
   let prof = either error P.id $ JSON.eitherDecode contents
       labelToId = Map.fromListWith (++) [(label, [id]) | CostCentre{id, label} <- cost_centres prof]
       pick t = if isNumber (Text.head t) then [read $ Text.unpack t] else labelToId Map.! t
+
       selected = map pick (path opts) `pathOnly` profile prof
 
       cSing = totals <$> selected
@@ -91,6 +93,12 @@ main = do
       ccs = IDMap.fromOverwriteList [IDKeyed id cc | cc@CostCentre{id} <- cost_centres prof]
       result = IDMap.elems (IDMap.intersectionWith CCStats ccs cDesc)
       sorted = sortOn (\CCStats{stats} -> sorter stats) result
+
+      roots = IntSet.fromList $ concatMap pick (path opts)
+      cRoot = rootedTotalCosts roots $ profile prof
+      resultRoot = IDMap.elems (IDMap.intersectionWith CCStats ccs cRoot)
+      sortedRoot = sortOn (\CCStats{stats} -> sorter stats) resultRoot
   ByteString.putStrLn $ case structure opts of
-    Tree -> encodePretty selectedWithCCs
-    List -> encodePretty sorted
+    Tree  -> encodePretty selectedWithCCs
+    List  -> encodePretty sorted
+    Roots -> encodePretty sortedRoot
