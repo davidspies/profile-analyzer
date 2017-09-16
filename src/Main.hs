@@ -80,7 +80,7 @@ main = do
   let prof = either error P.id $ JSON.eitherDecode contents
       labelToId = Map.fromListWith (++) [(label, [id]) | CostCentre{id, label} <- cost_centres prof]
       pick t = if isNumber (Text.head t) then [read $ Text.unpack t] else labelToId Map.! t
-      selected = mapIDd foldRecursion (map pick (path opts) `pathOnly` profile prof)
+      selected = map pick (path opts) `pathOnly` knMap foldRecursion (profile prof)
 
       cSing = totals <$> selected
       idToCC = Map.fromList [(id, cc) | cc@CostCentre{id} <- cost_centres prof]
