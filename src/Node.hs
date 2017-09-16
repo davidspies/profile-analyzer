@@ -11,7 +11,7 @@
 module Node
     ( Node(..)
     , KeyedNode
-    , SortedNode
+    , SortedNode(..)
     , foldRecursion
     , mapWithKey
     , pathOnly

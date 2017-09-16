@@ -84,8 +84,10 @@ main = do
 
       cSing = totals <$> selected
       idToCC = Map.fromList [(id, cc) | cc@CostCentre{id} <- cost_centres prof]
-      selectedWithCCs = sortChildrenOn (\CCStats{stats} -> sorter stats) <$>
-        mapIDd (Node.mapWithKey (\(IDKeyed k s) -> CCStats (idToCC Map.! k) s)) cSing
+      selectedWithCCs = sortOn (\(IDKeyed _ SortedNode{stats=CCStats{stats}}) -> sorter stats) $
+        IDMap.toList $
+          sortChildrenOn (\CCStats{stats} -> sorter stats) <$>
+          mapIDd (Node.mapWithKey (\(IDKeyed k s) -> CCStats (idToCC Map.! k) s)) cSing
 
       cDesc = foldCCMap totalCosts selected
       ccs = IDMap.fromOverwriteList [IDKeyed id cc | cc@CostCentre{id} <- cost_centres prof]

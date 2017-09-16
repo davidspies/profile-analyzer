@@ -20,7 +20,7 @@ import GHC.Generics (Generic)
 
 import IDKeyed
 import IDMap
-import Node
+import Node (KeyedNode, Node(..))
 
 data Totalized a = Totalized
   { self  :: a
