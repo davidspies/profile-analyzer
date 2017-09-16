@@ -12,9 +12,11 @@ import Data.Aeson (ToJSON)
 import qualified Data.Aeson as JSON
 import Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Lazy.Char8 as ByteString
+import Data.Char (isNumber)
 import Data.List (sortOn)
 import qualified Data.Map as Map
 import Data.Text (Text)
+import qualified Data.Text as Text
 import GHC.Generics (Generic)
 import Options.Applicative
 import Prelude hiding (id)
@@ -77,7 +79,8 @@ main = do
   Sorter sorter <- return $ sortKeyFunc (sortKey opts)
   let prof = either error P.id $ JSON.eitherDecode contents
       labelToId = Map.fromListWith (++) [(label, [id]) | CostCentre{id, label} <- cost_centres prof]
-      selected = map (labelToId Map.!) (path opts) `pathOnly` profile prof
+      pick t = if isNumber (Text.head t) then [read $ Text.unpack t] else labelToId Map.! t
+      selected = map pick (path opts) `pathOnly` profile prof
 
       cSing = totals <$> selected
       idToCC = Map.fromList [(id, cc) | cc@CostCentre{id} <- cost_centres prof]
