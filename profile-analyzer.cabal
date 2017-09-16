@@ -21,6 +21,7 @@ executable profile-analyzer
         bytestring -any,
         containers -any,
         dlist -any,
+        mtl -any,
         optparse-applicative -any,
         text -any,
         unordered-containers -any

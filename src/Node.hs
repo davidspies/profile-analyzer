@@ -6,20 +6,26 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Node
     ( Node(..)
     , KeyedNode
     , SortedNode
+    , foldRecursion
     , mapWithKey
     , pathOnly
     , sortChildrenOn
     ) where
 
+import Control.Monad.Writer (Writer, runWriter, tell)
 import Data.Aeson (FromJSON(..), ToJSON(..), (.:))
 import qualified Data.Aeson as JSON
 import qualified Data.HashMap.Lazy as JSObject
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
 import Data.List (sortOn)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Monoid ((<>))
 import GHC.Generics (Generic)
 import JSONObject (FromJSONObject, ToJSONObject, parseJSONObject, toJSONObject)
@@ -75,3 +81,18 @@ sortChildrenOn cmprtr = go
       { stats = upstats
       , children = sortOn (\SortedNode{stats} -> cmprtr stats) $ go <$> IDMap.elems children
       }
+
+foldRecursion :: forall a. Monoid a => KeyedNode a -> Node a
+foldRecursion = fromJust . fst . runWriter . go IntSet.empty
+  where
+    go :: IntSet -> KeyedNode a -> Writer (IDMap (Node a)) (Maybe (Node a))
+    go visited (IDKeyed k Node{stats, children})
+      | k `IntSet.member` visited =
+          tell (IDMap.insert (IDKeyed k newNode) recursed) >> return Nothing
+      | otherwise = tell restRecursed >> return (Just resNode)
+      where
+        (newChildren, recursed) =
+          runWriter $ traverseMaybeIDd (go (IntSet.insert k visited)) children
+        newNode = Node{stats, children = newChildren}
+        restRecursed = IDMap.delete k recursed
+        resNode = newNode <> fromMaybe mempty (IDMap.lookup k recursed)

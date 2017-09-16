@@ -2,20 +2,25 @@
 
 module IDMap
     ( IDMap
+    , delete
     , elems
     , foldCCMap
     , fromList
     , fromOverwriteList
+    , insert
     , intersectionWith
+    , lookup
     , mapIDd
     , singleton
     , toList
+    , traverseMaybeIDd
     ) where
 
 import Data.Aeson (FromJSON(..), ToJSON(..))
 import Data.Foldable (fold)
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
+import Prelude hiding (lookup)
 
 import IDKeyed
 import JSONObject
@@ -55,3 +60,19 @@ intersectionWith func (IDMap x) (IDMap y) = IDMap $ IntMap.intersectionWith func
 
 elems :: IDMap a -> [a]
 elems (IDMap x) = IntMap.elems x
+
+insert :: Monoid a => IDKeyed a -> IDMap a -> IDMap a
+insert (IDKeyed k v) (IDMap m) = IDMap (IntMap.insertWith mappend k v m)
+
+delete :: CostCentreID -> IDMap a -> IDMap a
+delete k (IDMap m) = IDMap (IntMap.delete k m)
+
+-- Not available in containers-0.5.7.1
+traverseMaybeWithKey :: Applicative f => (Int -> a -> f (Maybe b)) -> IntMap a -> f (IntMap b)
+traverseMaybeWithKey func = fmap (IntMap.mapMaybe id) . IntMap.traverseWithKey func
+
+traverseMaybeIDd :: Applicative f => (IDKeyed a -> f (Maybe b)) -> IDMap a -> f (IDMap b)
+traverseMaybeIDd func (IDMap m) = IDMap <$> traverseMaybeWithKey ((func .) . IDKeyed) m
+
+lookup :: CostCentreID -> IDMap a -> Maybe a
+lookup k (IDMap m) = IntMap.lookup k m
