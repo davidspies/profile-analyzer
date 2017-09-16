@@ -1,0 +1,35 @@
+name: profile-analyzer
+version: 0.1.0.0
+cabal-version: >=1.10
+build-type: Simple
+license: GPL-3
+license-file: LICENSE
+copyright: 2017 David Spies
+maintainer: dnspies@gmail.com
+homepage: https://github.com/davidspies/profile-analyzer#readme
+category: Profiling
+author: David Spies
+extra-source-files:
+    README.md
+
+executable profile-analyzer
+    main-is: Main.hs
+    build-depends:
+        base >=4.7 && <5,
+        aeson -any,
+        aeson-pretty -any,
+        bytestring -any,
+        containers -any,
+        dlist -any,
+        optparse-applicative -any,
+        text -any,
+        unordered-containers -any
+    default-language: Haskell2010
+    hs-source-dirs: src
+    other-modules:
+        IDKeyed
+        IDMap
+        JSONObject
+        Node
+        Profile
+        Totalized
